@@ -17,7 +17,6 @@ type Error = Box<dyn std::error::Error + Send + Sync + 'static>;
 use crate::UriEncoding::Double;
 use http::header::HeaderName;
 use sign::{calculate_signature, encode_with_hex, generate_signing_key};
-use std::time::SystemTime;
 use types::{AsSigV4, CanonicalRequest, DateTimeExt, StringToSign};
 
 pub fn sign<B>(
@@ -37,7 +36,7 @@ where
             security_token: credential.security_token.as_deref(),
             region,
             svc,
-            date: SystemTime::now(),
+            date: Utc::now(),
             settings: Default::default(),
         },
     ) {
@@ -76,7 +75,7 @@ pub struct Config<'a> {
     pub region: &'a str,
     pub svc: &'a str,
 
-    pub date: SystemTime,
+    pub date: DateTime<Utc>,
 
     pub settings: SigningSettings,
 }
@@ -128,7 +127,7 @@ where
 
     // Step 2: https://docs.aws.amazon.com/en_pv/general/latest/gr/sigv4-create-string-to-sign.html.
     let encoded_creq = &encode_with_hex(creq.fmt());
-    let date = DateTime::<Utc>::from(date);
+
     let sts = StringToSign::new(date, region, svc, encoded_creq);
 
     // Step 3: https://docs.aws.amazon.com/en_pv/general/latest/gr/sigv4-calculate-signature.html
